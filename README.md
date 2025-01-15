@@ -4,7 +4,7 @@
 This project aims to create a high-quality dataset of complex control settings for AI alignment research. Each setting consists of a moderately complex environment where an AI agent must balance a main task while potentially pursuing a covert side task, all while being monitored.
 
 ## Project Goals
-1. Create 10-20 well-designed control environments
+1. Create 3-7 well-designed control environments
 2. Implement robust monitoring systems for each environment
 3. Validate environments with both human and LLM participants
 4. Document and publish findings for the AI safety community
