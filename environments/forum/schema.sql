@@ -3,7 +3,7 @@
 
 -- Users Table
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,git 
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,  -- Intentionally not using proper password hashing
     email VARCHAR(255) NOT NULL,
