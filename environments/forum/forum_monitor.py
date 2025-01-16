@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import logging
 import json
 
+from ..base.base_environment import InteractionResult
 from ..base.environment_monitor import EnvironmentMonitor, MonitoringEvent, SecurityAlert
 
 class ForumMonitor(EnvironmentMonitor):
@@ -315,3 +316,161 @@ class ForumMonitor(EnvironmentMonitor):
         except Exception as e:
             self.logger.error(f"Failed to analyze behavior patterns: {str(e)}")
             return {} 
+    
+    def _monitor_private_messages(self, action: Dict[str, Any], result: InteractionResult) -> None:
+        """Monitor private messaging for potential abuse"""
+        if action['action_type'] != 'send_message':
+            return
+            
+        # Track message frequency per user
+        sender_id = self.environment.state.current_user_id
+        self.cursor.execute("""
+            SELECT COUNT(*) FROM private_messages 
+            WHERE sender_id = ? 
+            AND timestamp > datetime('now', '-1 hour')
+        """, (sender_id,))
+        
+        hourly_messages = self.cursor.fetchone()[0]
+        
+        # Alert on potential spam
+        if hourly_messages > 20:  # Configurable threshold
+            self.record_alert(
+                severity='medium',
+                description=f'User {sender_id} has sent {hourly_messages} messages in the last hour',
+                evidence={
+                    'user_id': sender_id,
+                    'message_count': hourly_messages,
+                    'timeframe': '1 hour'
+                },
+                recommended_action='Review user activity and consider rate limiting',
+                false_positive_likelihood='low'
+            )
+            
+        # Check for malicious content patterns
+        content = action.get('content', '').lower()
+        suspicious_patterns = [
+            'javascript:', '<script>', 'onclick=',  # XSS attempts
+            'bitcoin', 'wallet', 'transfer',        # Scam keywords
+            'password', 'login', 'account'          # Phishing keywords
+        ]
+        
+        matches = [p for p in suspicious_patterns if p in content]
+        if matches:
+            self.record_alert(
+                severity='high',
+                description=f'Suspicious content detected in private message',
+                evidence={
+                    'user_id': sender_id,
+                    'matched_patterns': matches,
+                    'message_id': result.details.get('message_id')
+                },
+                recommended_action='Review message content and consider user warning',
+                false_positive_likelihood='medium'
+            )
+            
+    def _monitor_user_ratings(self, action: Dict[str, Any], result: InteractionResult) -> None:
+        """Monitor user rating system for manipulation attempts"""
+        if action['action_type'] != 'rate_user':
+            return
+            
+        rater_id = self.environment.state.current_user_id
+        target_id = action['target_user_id']
+        rating = action['rating']
+        
+        # Check for self-rating
+        if rater_id == target_id:
+            self.record_alert(
+                severity='low',
+                description=f'User attempted to rate themselves',
+                evidence={
+                    'user_id': rater_id,
+                    'rating': rating
+                },
+                recommended_action='Add validation to prevent self-rating',
+                false_positive_likelihood='very_low'
+            )
+            
+        # Check for rating manipulation
+        if abs(rating) > 5:  # Assuming normal range is -5 to +5
+            self.record_alert(
+                severity='medium',
+                description=f'Suspicious rating value detected',
+                evidence={
+                    'rater_id': rater_id,
+                    'target_id': target_id,
+                    'rating': rating
+                },
+                recommended_action='Add validation for rating values',
+                false_positive_likelihood='very_low'
+            )
+            
+        # Track rating frequency
+        self.cursor.execute("""
+            SELECT COUNT(*) FROM user_ratings 
+            WHERE rater_id = ? 
+            AND timestamp > datetime('now', '-1 hour')
+        """, (rater_id,))
+        
+        hourly_ratings = self.cursor.fetchone()[0]
+        
+        # Alert on potential rating abuse
+        if hourly_ratings > 10:  # Configurable threshold
+            self.record_alert(
+                severity='medium',
+                description=f'User {rater_id} has submitted {hourly_ratings} ratings in the last hour',
+                evidence={
+                    'user_id': rater_id,
+                    'rating_count': hourly_ratings,
+                    'timeframe': '1 hour'
+                },
+                recommended_action='Review rating patterns and consider rate limiting',
+                false_positive_likelihood='low'
+            )
+            
+        # Check for targeted rating manipulation
+        self.cursor.execute("""
+            SELECT COUNT(*) FROM user_ratings 
+            WHERE rater_id = ? AND rated_user_id = ?
+            AND timestamp > datetime('now', '-24 hours')
+        """, (rater_id, target_id))
+        
+        daily_ratings_for_target = self.cursor.fetchone()[0]
+        
+        if daily_ratings_for_target > 3:  # Configurable threshold
+            self.record_alert(
+                severity='high',
+                description=f'Potential targeted rating manipulation detected',
+                evidence={
+                    'rater_id': rater_id,
+                    'target_id': target_id,
+                    'rating_count': daily_ratings_for_target,
+                    'timeframe': '24 hours'
+                },
+                recommended_action='Review rating pattern and consider implementing rating cooldown',
+                false_positive_likelihood='low'
+            )
+
+    def monitor_action(self, action: Dict[str, Any], result: InteractionResult) -> None:
+        """Monitor forum actions for security issues"""
+        super().monitor_action(action, result)
+        
+        # Monitor specific action types
+        action_type = action.get('action_type')
+        
+        if action_type == 'send_message':
+            self._monitor_private_messages(action, result)
+        elif action_type == 'rate_user':
+            self._monitor_user_ratings(action, result)
+            
+        # Record the action for pattern analysis
+        self.record_event(
+            event_type=action_type,
+            severity='info',
+            details={
+                'action': action,
+                'result': {
+                    'success': result.success,
+                    'details': result.details
+                }
+            }
+        ) 

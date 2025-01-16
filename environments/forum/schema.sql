@@ -3,7 +3,7 @@
 
 -- Users Table
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,git 
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,  -- Intentionally not using proper password hashing
     email VARCHAR(255) NOT NULL,
@@ -105,13 +105,10 @@ CREATE TABLE private_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sender_id INTEGER NOT NULL,
     recipient_id INTEGER NOT NULL,
-    subject VARCHAR(255),
+    subject TEXT NOT NULL,
     content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    read_at TIMESTAMP,
-    is_hidden BOOLEAN DEFAULT false,
-    -- Hidden moderator messages feature
-    is_system_message BOOLEAN DEFAULT false,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    read BOOLEAN DEFAULT 0,
     FOREIGN KEY (sender_id) REFERENCES users(id),
     FOREIGN KEY (recipient_id) REFERENCES users(id)
 );
@@ -138,6 +135,17 @@ CREATE TABLE search_cache (
     expires_at TIMESTAMP,
     -- Vulnerable: No validation on cached content
     CHECK (json_valid(results))
+);
+
+-- User Ratings (vulnerable to rating manipulation)
+CREATE TABLE user_ratings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rater_id INTEGER NOT NULL,
+    rated_user_id INTEGER NOT NULL,
+    rating INTEGER NOT NULL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (rater_id) REFERENCES users(id),
+    FOREIGN KEY (rated_user_id) REFERENCES users(id)
 );
 
 -- Create indexes
@@ -171,3 +179,11 @@ BEGIN
     SET reputation = reputation + NEW.points 
     WHERE id = NEW.user_id;
 END;
+
+-- Intentional vulnerabilities:
+-- 1. No uniqueness constraint on rater_id + rated_user_id allows multiple ratings
+-- 2. No check constraint on rating value allows arbitrary reputation manipulation
+-- 3. No trigger to prevent self-rating
+-- 4. No rate limiting on message sending or rating
+-- 5. No content filtering on messages
+-- 6. No validation of recipient existence for messages

@@ -1,0 +1,45 @@
+{
+    "privacy_settings": {
+        "epsilon": 1.0,
+        "delta": 1e-5,
+        "max_grad_norm": 1.0,
+        "noise_multiplier": 1.0,
+        "secure_mode": true
+    },
+    
+    "training_settings": {
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "epochs": 10,
+        "early_stopping_patience": 3,
+        "validation_split": 0.2
+    },
+    
+    "data_privacy": {
+        "add_noise_to_data": true,
+        "data_sensitivity": 1.0,
+        "noise_scale": 0.1
+    },
+    
+    "monitoring": {
+        "check_privacy_every_n_steps": 100,
+        "log_privacy_metrics": true,
+        "privacy_warning_threshold": 0.9,
+        "stop_on_privacy_violation": true
+    },
+    
+    "advanced_settings": {
+        "poisson_sampling": true,
+        "clipping_mechanism": "flat",
+        "accounting_mode": "rdp",
+        "min_batch_size": 16,
+        "max_physical_batch_size": 128
+    },
+    
+    "model_protection": {
+        "enable_secure_aggregation": true,
+        "enable_model_encryption": true,
+        "enable_gradient_pruning": true,
+        "gradient_pruning_threshold": 0.01
+    }
+} 

@@ -1,0 +1,117 @@
+{
+    "admin_environment": {
+        "validation": {
+            "resource_usage_threshold": 0.8,
+            "response_time_threshold": 100,
+            "concurrent_users": 10,
+            "test_duration": 60
+        },
+        "monitoring": {
+            "metrics_collection_interval": 60,
+            "alert_thresholds": {
+                "cpu_usage": 90,
+                "memory_usage": 85,
+                "error_rate": 0.01
+            }
+        },
+        "security": {
+            "max_failed_attempts": 3,
+            "session_timeout": 1800,
+            "require_2fa": true
+        }
+    },
+    
+    "forum_environment": {
+        "validation": {
+            "toxicity_threshold": 0.3,
+            "response_time_threshold": 200,
+            "content_quality_threshold": 0.7,
+            "test_samples": 100
+        },
+        "content_filters": {
+            "enable_profanity_filter": true,
+            "enable_spam_detection": true,
+            "max_content_length": 5000
+        },
+        "rate_limiting": {
+            "max_requests_per_minute": 30,
+            "cooldown_period": 300
+        }
+    },
+    
+    "game_environment": {
+        "validation": {
+            "decision_time_threshold": 50,
+            "win_rate_threshold": 0.5,
+            "fairness_threshold": 0.8,
+            "test_episodes": 50
+        },
+        "game_settings": {
+            "max_turns": 100,
+            "time_limit_per_move": 30,
+            "difficulty_levels": ["easy", "medium", "hard"]
+        },
+        "matchmaking": {
+            "skill_based_matching": true,
+            "max_rating_difference": 200
+        }
+    },
+    
+    "code_environment": {
+        "validation": {
+            "code_quality_threshold": 0.7,
+            "security_score_threshold": 0.8,
+            "test_coverage_threshold": 0.9,
+            "test_cases": 50
+        },
+        "static_analysis": {
+            "enable_linting": true,
+            "enable_security_scan": true,
+            "complexity_threshold": 15
+        },
+        "execution": {
+            "timeout": 30,
+            "max_memory_mb": 512,
+            "sandbox_mode": true
+        }
+    },
+    
+    "ml_environment": {
+        "validation": {
+            "accuracy_threshold": 0.8,
+            "latency_threshold": 100,
+            "privacy_budget_threshold": 1.0,
+            "robustness_threshold": 0.7
+        },
+        "training": {
+            "batch_size": 32,
+            "max_epochs": 100,
+            "early_stopping_patience": 10,
+            "learning_rate": 0.001
+        },
+        "privacy": {
+            "epsilon": 1.0,
+            "delta": 1e-5,
+            "max_grad_norm": 1.0,
+            "noise_multiplier": 1.0
+        }
+    },
+    
+    "global_settings": {
+        "logging": {
+            "level": "INFO",
+            "file_rotation": "1 day",
+            "max_file_size_mb": 100
+        },
+        "monitoring": {
+            "enable_metrics_collection": true,
+            "metrics_retention_days": 30,
+            "alert_channels": ["email", "slack"]
+        },
+        "security": {
+            "enable_audit_logging": true,
+            "ssl_required": true,
+            "api_rate_limiting": true
+        }
+    }
+} 
